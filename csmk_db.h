@@ -1,13 +1,28 @@
+/**
+ * @file csmk_db.h
+ * @author Claude Stephane Kouame (stephane.kouame@africasgeeks.com)
+ * @brief 
+ * @version 0.1
+ * @date 2023-12-22
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
 #ifndef _CSMK_H_
 #define _CSMK_H_
 
-#include <bigint.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define BIGINT_SUPPORTED
+
+#ifdef BIGINT_SUPPORTED
+#include <bigint.h>
 #include <support.h>
+#endif
 
 
 typedef struct {
@@ -25,7 +40,7 @@ typedef struct {
     unsigned int *program_mem;
     int *sp;
     int *fp;
-    uint32_t *pc;
+    int *pc;
     int prog_length;
     int sda_length;
     char *code_file_name;
@@ -38,7 +53,7 @@ extern csmk_db_util_object db_object;
 extern csmk_db_init_object db_init_object;
 
 void csmk_db_vars_init(void *stack, void *sda, void *ret_reg,
-                         unsigned int *prog, int *sp, int *fp, uint32_t *pc,
+                         unsigned int *prog, int *sp, int *fp, int *pc,
                          int prog_length, int sda_length, char *file_name,
                          bool *debug, int vm_version, void (*runner)(void), int *br_point);
 void csmk_db_run_debugger(void);
@@ -52,7 +67,8 @@ void csmk_db_print_object(void* ob);
 
 //#define CSMK_DBG_ON 1
 
-#ifndef NJVM_UTILS_MACRO_DEFINES
+#define NJVM_UTILS_MACRO
+#ifdef NJVM_UTILS_MACRO
 
 typedef struct {
   unsigned int size;     /* byte count of payload data */
@@ -68,6 +84,7 @@ typedef struct {
   } u;
 } StackSlot;
 
+#endif /* NJVM_UTILS_MACRO */
 
 #define IMMEDIATE(x) ((x)&0x00FFFFFF)
 #define SIGN_EXTEND(i) ((i)&0x00800000 ? (i) | 0xFF000000 : (i))
@@ -81,62 +98,64 @@ typedef struct {
   ((objRef)->size & ~MSB) // ~MSB = 01111111 11111111 11111111 11111111
 #define GET_REFS(objRef) ((ObjRef *)(objRef)->data)
 
+
+
 // Instruction
-#define HALT 0
+#define DB_HALT 0
 
-#define PUSHC 1
+#define DB_PUSHC 1
 
-#define ADD 2
-#define SUB 3
-#define MUL 4
-#define DIV 5
-#define MOD 6
+#define DB_ADD 2
+#define DB_SUB 3
+#define DB_MUL 4
+#define DB_DIV 5
+#define DB_MOD 6
 
-#define RDINT 7
-#define WRINT 8
-#define RDCHR 9
-#define WRCHR 10
+#define DB_RDINT 7
+#define DB_WRINT 8
+#define DB_RDCHR 9
+#define DB_WRCHR 10
 
-#define PUSHG 11
-#define POPG 12
+#define DB_PUSHG 11
+#define DB_POPG 12
 
-#define ASF 13
-#define RSF 14
-#define PUSHL 15
-#define POPL 16
+#define DB_ASF 13
+#define DB_RSF 14
+#define DB_PUSHL 15
+#define DB_POPL 16
 
-#define EQ 17
-#define NE 18
-#define LT 19
-#define LE 20
-#define GT 21
-#define GE 22
+#define DB_EQ 17
+#define DB_NE 18
+#define DB_LT 19
+#define DB_LE 20
+#define DB_GT 21
+#define DB_GE 22
 
-#define JMP 23
-#define BRF 24
-#define BRT 25
+#define DB_JMP 23
+#define DB_BRF 24
+#define DB_BRT 25
 
-#define CALL 26
-#define RET 27
-#define DROP 28
-#define PUSHR 29
-#define POPR 30
+#define DB_CALL 26
+#define DB_RET 27
+#define DB_DROP 28
+#define DB_PUSHR 29
+#define DB_POPR 30
 
-#define DUP 31
+#define DB_DUP 31
 
-#define NEW 32
-#define GETF 33
-#define PUTF 34
+#define DB_NEW 32
+#define DB_GETF 33
+#define DB_PUTF 34
 
-#define NEWA 35
-#define GETFA 36
-#define PUTFA 37
+#define DB_NEWA 35
+#define DB_GETFA 36
+#define DB_PUTFA 37
 
-#define GETSZ 38
+#define DB_GETSZ 38
 
-#define PUSHN 39
-#define REFEQ 40
-#define REFNE 41
-#endif /* NJVM_UTILS_MACRO_DEFINES*/
+#define DB_PUSHN 39
+#define DB_REFEQ 40
+#define DB_REFNE 41
+
 
 #endif /* _CSMK_H_ */

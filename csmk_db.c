@@ -1,3 +1,13 @@
+/**
+ * @file csmk_db.c
+ * @author Claude Stephane Kouame (stephane.kouame@africasgeeks.com)
+ * @brief 
+ * @version 0.1
+ * @date 2023-12-22
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
 #include "csmk_db.h"
 
 csmk_db_util_object db_object;
@@ -5,8 +15,9 @@ csmk_db_init_object db_init_object;
 
 bool csmk_db_on = true;
 
+
 void csmk_db_vars_init(void *stack, void *sda, void *ret_reg,
-                       unsigned int *prog, int *sp, int *fp, uint32_t *pc,
+                       unsigned int *prog, int *sp, int *fp, int *pc,
                        int prog_length, int sda_length, char *file_name,
                        bool *debug, int vm_version, void (*runner)(void), int *br_point) {
   db_init_object.stack = stack;
@@ -22,7 +33,6 @@ void csmk_db_vars_init(void *stack, void *sda, void *ret_reg,
   db_init_object.code_file_name = file_name;
   db_init_object.vm_version = vm_version;
   db_init_object.br_point = br_point;
-  // db_object = (csmk_db_util_object *)malloc(sizeof(csmk_db_util_object));
 
   db_object.debug = debug;
   db_object.bp = -1;
@@ -31,7 +41,6 @@ void csmk_db_vars_init(void *stack, void *sda, void *ret_reg,
 }
 
 void csmk_db_run_debugger(void) {
-  // DEBUG: file 'tests/addandPow.bin' loaded (code size = 103, data size = 0)
   printf("CSMK DEBUG: file '%s' loaded (prog size [%d] | sda size [%d]) \n",
          db_init_object.code_file_name, db_init_object.prog_length,
          db_init_object.sda_length);
@@ -84,6 +93,7 @@ void csmk_db_run_debugger(void) {
         csmk_db_on = false;
       }*/
       db_object.halt = true;
+      break;
     } else if (strcmp(input_buff, "quit") == 0 || input_buff[0] == 'q') {
       printf("Happy Hacking\n\t bye\n");
       break;
@@ -175,6 +185,7 @@ void csmk_db_print_stack(void) {
       } else {
         StackSlot *db_stack = (StackSlot*)db_init_object.stack;
         if (db_stack[sp].isObjRef) {
+          #ifdef BIGINT_SUPPORTED
           if (db_stack[sp].u.objRef != NULL) {
             // handle object here
             //printf("Handle Object \n");
@@ -182,6 +193,7 @@ void csmk_db_print_stack(void) {
           } else {
             printf(" (nil) Object");
           }
+          #endif
         } else {
           printf("%d", db_stack[sp].u.number);
         }
@@ -192,6 +204,7 @@ void csmk_db_print_stack(void) {
   }
 }
 
+#ifdef BIGINT_SUPPORTED
 void csmk_db_print_object(void *ob) {
   ObjRef obj = (ObjRef)ob;
   if (obj == NULL) {
@@ -218,6 +231,8 @@ void csmk_db_print_object(void *ob) {
     printf(" }");
   }
 }
+#endif
+
 void csmk_db_print_sda(void) {
   int i = db_init_object.sda_length - 1;
   while (i > -1) {
@@ -227,8 +242,10 @@ void csmk_db_print_sda(void) {
         int *db_sda = (int*)db_init_object.sda;
       printf("%d", db_sda[i]);
     } else {
+      #ifdef BIGINT_SUPPORTED
       ObjRef *db_sda = (ObjRef*)db_init_object.sda;
       csmk_db_print_object(db_sda[i]);
+      #endif
     }
     printf(" ]\n");
     i -= 1;
@@ -242,141 +259,143 @@ void csmk_db_show_ret_reg(void) {
     int *ret_reg = (int*)db_init_object.ret_reg;
     printf("%d", *ret_reg);
   } else {
-    ObjRef obj = (ObjRef)db_init_object.ret_reg;
-    bip.op1 = obj;
-    if (obj != NULL) {
+    #ifdef BIGINT_SUPPORTED
+    ObjRef *obj = (ObjRef*)db_init_object.ret_reg;
+    if (*obj != NULL) {
+      bip.op1 = *obj;
       bigPrint(stdout);
     }
+    #endif /* BIGINT_SUPPORTED */
   }
   printf(") ]\n");
 }
 void csmk_db_print_inst(int pc, unsigned int ir) {
   printf("[%04d]\t", pc);
   switch ((ir) >> 24) {
-  case HALT:
+  case DB_HALT:
     printf("halt");
     break;
-  case PUSHC:
+  case DB_PUSHC:
     printf("pushc\t%d", SIGN_EXTEND(IMMEDIATE(ir)));
     break;
-  case ADD:
+  case DB_ADD:
     printf("add");
     break;
-  case SUB:
+  case DB_SUB:
     printf("sub");
     break;
-  case MUL:
+  case DB_MUL:
     printf("mul");
     break;
-  case DIV:
+  case DB_DIV:
     printf("div");
     break;
-  case MOD:
+  case DB_MOD:
     printf("mod");
     break;
-  case RDINT:
+  case DB_RDINT:
     printf("rdint");
     break;
-  case WRINT:
+  case DB_WRINT:
     printf("wrint");
     break;
-  case RDCHR:
+  case DB_RDCHR:
     printf("rdchr");
     break;
-  case WRCHR:
+  case DB_WRCHR:
     printf("wrchr");
     break;
-  case PUSHG:
+  case DB_PUSHG:
     printf("pushg\t%d", IMMEDIATE(ir));
     break;
-  case POPG:
+  case DB_POPG:
     printf("popg\t%d", IMMEDIATE(ir));
     break;
-  case ASF:
+  case DB_ASF:
     printf("asf\t%d", IMMEDIATE(ir));
     break;
-  case RSF:
+  case DB_RSF:
     printf("rsf");
     break;
-  case PUSHL:
+  case DB_PUSHL:
     printf("pushl\t%d", SIGN_EXTEND(IMMEDIATE(ir)));
     break;
-  case POPL:
+  case DB_POPL:
     printf("popl\t%d", SIGN_EXTEND(IMMEDIATE(ir)));
     break;
-  case EQ:
+  case DB_EQ:
     printf("eq");
     break;
-  case NE:
+  case DB_NE:
     printf("ne");
     break;
-  case LT:
+  case DB_LT:
     printf("lt");
     break;
-  case LE:
+  case DB_LE:
     printf("le");
     break;
-  case GT:
+  case DB_GT:
     printf("gt");
     break;
-  case GE:
+  case DB_GE:
     printf("ge");
     break;
-  case JMP:
+  case DB_JMP:
     printf("jmp\t%d", IMMEDIATE(ir));
     break;
-  case BRF:
+  case DB_BRF:
     printf("brf\t%d", IMMEDIATE(ir));
     break;
-  case BRT:
+  case DB_BRT:
     printf("brt\t%d", IMMEDIATE(ir));
     break;
-  case CALL:
+  case DB_CALL:
     printf("call\t%d", IMMEDIATE(ir));
     break;
-  case RET:
+  case DB_RET:
     printf("ret");
     break;
-  case DROP:
+  case DB_DROP:
     printf("drop\t%d", IMMEDIATE(ir));
     break;
-  case PUSHR:
+  case DB_PUSHR:
     printf("pushr");
     break;
-  case POPR:
+  case DB_POPR:
     printf("popr");
     break;
-  case DUP:
+  case DB_DUP:
     printf("dup");
     break;
-  case NEW:
+  case DB_NEW:
     printf("new\t%d", IMMEDIATE(ir));
     break;
-  case GETF:
+  case DB_GETF:
     printf("getf\t%d", IMMEDIATE(ir));
     break;
-  case PUTF:
+  case DB_PUTF:
     printf("putf\t%d", IMMEDIATE(ir));
     break;
-  case NEWA:
+  case DB_NEWA:
     printf("newa");
     break;
-  case GETFA:
+  case DB_GETFA:
     printf("getfa");
     break;
-  case PUTFA:
+  case DB_PUTFA:
     printf("putfa");
     break;
-  case GETSZ:
+  case DB_GETSZ:
     printf("getsz");
     break;
-  case PUSHN:
+  case DB_PUSHN:
     printf("pushn");
     break;
-  case REFEQ:
+  case DB_REFEQ:
     printf("refeq");
     break;
-  case REFNE:
+  case DB_REFNE:
     printf("refne");
     break;
   }
