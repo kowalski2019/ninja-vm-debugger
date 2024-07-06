@@ -1,5 +1,5 @@
 /**
- * @file csmk_db.h
+ * @file csmkdb.h
  * @author Claude Stephane Kouame (stephane.kouame@africasgeeks.com)
  * @brief 
  * @version 0.1
@@ -16,12 +16,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define BIGINT_SUPPORTED
 
 #ifdef BIGINT_SUPPORTED
 #include <bigint.h>
 #include <support.h>
+#include <signal.h>
+#include <execinfo.h>
+#include <unistd.h>
+
 #endif
 
 
@@ -30,7 +35,8 @@ typedef struct {
   bool *debug;
   bool halt;
   int bp;
-} csmk_db_util_object;
+  bool run;
+} csmkdb_util_object;
 
 
 typedef struct {
@@ -47,25 +53,30 @@ typedef struct {
     int vm_version;
     int *br_point;
 
-} csmk_db_init_object;
+} csmkdb_init_object;
 
-extern csmk_db_util_object db_object;
-extern csmk_db_init_object db_init_object;
+extern csmkdb_util_object db_object;
+extern csmkdb_init_object db_init_object;
 
-void csmk_db_vars_init(void *stack, void *sda, void *ret_reg,
+void csmkdb_vars_init(void *stack, void *sda, void *ret_reg,
                          unsigned int *prog, int *sp, int *fp, int *pc,
                          int prog_length, int sda_length, char *file_name,
                          bool *debug, int vm_version, void (*runner)(void), int *br_point);
-void csmk_db_run_debugger(void);
-void csmk_db_print_inst(int pc, unsigned int inst);
-void csmk_db_print_stack(void);
-void csmk_db_print_sda(void);
-void csmk_db_show_ret_reg(void);
-void csmk_db_bp_handler(void);
-bool csmk_db_is_integer(char *buf);
-void csmk_db_print_object(void* ob);
+void csmkdb_run_debugger(void);
+char *csmkdb_format_inst(int pc, unsigned int inst);
+void csmkdb_print_inst(int pc, unsigned int inst);
+void csmkdb_print_stack(void);
+void csmkdb_print_sda(void);
+void csmkdb_show_ret_reg(void);
+void csmkdb_bp_handler(void);
+bool csmkdb_is_integer(char *buf);
+void csmkdb_print_object(void* ob);
 
-//#define CSMK_DBG_ON 1
+void csmkdb_log_message(const char* filename, const char* message);
+char* csmkdb_get_timestamp(void);
+void csmkdb_signal_handler(int signal);
+
+//#define CSMKDB_ON 1
 
 #define NJVM_UTILS_MACRO
 #ifdef NJVM_UTILS_MACRO
